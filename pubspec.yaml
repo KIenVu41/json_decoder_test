@@ -1,6 +1,8 @@
 name: json_decoder_test
 description: Test how Dart JSON decoders handle missing fields, nulls, type changes, and unknown enum values.
 version: 0.1.0
+repository: https://github.com/KIenVu41/json_decoder_test
+issue_tracker: https://github.com/KIenVu41/json_decoder_test/issues
 environment:
   sdk: ^3.6.2
 dependencies:

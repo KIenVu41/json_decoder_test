@@ -10,26 +10,31 @@ import 'package:test/test.dart';
 ///
 /// Paths use string keys for objects and zero-based integer indices for arrays.
 /// Each case starts with a fresh copy of the original fixture.
+/// The path must be nonempty and point to an existing value. Invalid targets
+/// fail the test before the decoder runs.
 final class JsonMutation {
   /// Removes an existing object field or array element.
   JsonMutation.remove(Iterable<Object> path)
-    : this._(path, remove: true, encodedValue: null);
+      : this._(path, remove: true, encodedValue: null);
 
   /// Replaces an existing value, including with null or an unknown enum value.
+  ///
+  /// [value] must be JSON-encodable.
   JsonMutation.replace(Iterable<Object> path, Object? value)
-    : this._(path, remove: false, encodedValue: jsonEncode(value));
+      : this._(path, remove: false, encodedValue: jsonEncode(value));
 
   JsonMutation._(
     Iterable<Object> path, {
     required bool remove,
     required String? encodedValue,
-  }) : path = List.unmodifiable(path),
-       _remove = remove,
-       _encodedValue = encodedValue {
+  })  : path = List.unmodifiable(path),
+        _remove = remove,
+        _encodedValue = encodedValue {
     if (this.path.isEmpty ||
         this.path.any(
-          (segment) => segment is! String && (segment is! int || segment < 0),
-        )) {
+              (segment) =>
+                  segment is! String && (segment is! int || segment < 0),
+            )) {
       throw ArgumentError.value(this.path, 'path', 'Expected keys or indices');
     }
   }
@@ -93,13 +98,13 @@ final class DecoderCase {
   ///
   /// [expected] follows the same rules as the second argument to [expect].
   const DecoderCase.decodes(this.mutation, Object? expected)
-    : _expected = expected,
-      _throws = false;
+      : _expected = expected,
+        _throws = false;
 
   /// Expects the decoder to throw or complete with an error matching [error].
   const DecoderCase.rejects(this.mutation, Matcher error)
-    : _expected = error,
-      _throws = true;
+      : _expected = error,
+        _throws = true;
 
   /// The change to apply before invoking the decoder.
   final JsonMutation mutation;
@@ -108,6 +113,9 @@ final class DecoderCase {
 }
 
 /// Registers a baseline test and one isolated test per case.
+///
+/// [fixture] must be JSON-encodable. It is snapshotted when tests are
+/// registered and decoded into a fresh copy for each test.
 ///
 /// [decode] can return a value or a future.
 /// The baseline must decode successfully. [baseline] optionally checks its
