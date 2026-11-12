@@ -12,6 +12,9 @@ Add the package as a dev dependency with `dart pub add --dev json_decoder_test`
 or `flutter pub add --dev json_decoder_test`. To try an unpublished checkout,
 use a path dependency pointing to the checkout.
 
+Declare `test` as a dev dependency in Dart projects that import it directly.
+In Flutter projects, declare `flutter_test` as a dev dependency from the Flutter SDK.
+
 ## Usage
 
 Import `package:json_decoder_test/json_decoder_test.dart` and either
@@ -38,10 +41,13 @@ testJsonDecoder(
 
 Pass string keys and zero-based array indices to address nested values, for
 example `['orders', 0, 'status']`. Targets must exist in the original fixture.
+An invalid target fails the case before the decoder runs. Fixtures and
+replacement values must be JSON-encodable.
 Each case gets its own copy, so mutations and decoder writes do not leak
 between tests. The original fixture also gets a baseline test. The decoder
 can return a value or a future. Supply an exception matcher for a rejection,
 or an expected value or matcher for a successful decode.
 
-From this checkout, run the complete example with
+The [complete example](example/json_decoder_test_example.dart) includes the
+`User` model, imports, and test entry point. From this checkout, run it with
 `dart test example/json_decoder_test_example.dart`.

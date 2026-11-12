@@ -7,9 +7,9 @@ final class User {
   User(this.id, this.status);
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-    json['id'] as int,
-    json['status'] == 'active' ? Status.active : Status.unknown,
-  );
+        json['id'] as int,
+        json['status'] == 'active' ? Status.active : Status.unknown,
+      );
 
   final int id;
   final Status status;
