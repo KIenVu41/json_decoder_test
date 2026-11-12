@@ -1,0 +1,16 @@
+# Dart tooling and generated output
+/.dart_tool/
+/build/
+/coverage/
+/doc/api/
+
+# Library dependency resolution and local overrides
+/pubspec.lock
+/pubspec_overrides.yaml
+
+# Local SDK cache and editor settings
+/.fvm/
+/.vscode/settings.json
+
+# macOS
+.DS_Store
