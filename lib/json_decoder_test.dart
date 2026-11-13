@@ -4,7 +4,8 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:test/test.dart';
+import 'package:matcher/expect.dart';
+import 'package:test_api/scaffolding.dart';
 
 /// One change to an existing field or array element in a JSON fixture.
 ///
