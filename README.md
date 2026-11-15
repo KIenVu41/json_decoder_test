@@ -28,8 +28,7 @@ testJsonDecoder(
   fixture: {'id': 42, 'status': 'active'},
   decode: User.fromJson,
   cases: [
-    DecoderCase.rejects(JsonMutation.remove(['id']), isA<TypeError>()),
-    DecoderCase.rejects(JsonMutation.replace(['id'], null), isA<TypeError>()),
+    ...DecoderCase.rejectsMissingOrNull(['id'], isA<TypeError>()),
     DecoderCase.rejects(JsonMutation.replace(['id'], '42'), isA<TypeError>()),
     DecoderCase.decodes(
       JsonMutation.replace(['status'], 'paused'),
@@ -47,6 +46,17 @@ Each case gets its own copy, so mutations and decoder writes do not leak
 between tests. The original fixture also gets a baseline test. The decoder
 can return a value or a future. Supply an exception matcher for a rejection,
 or an expected value or matcher for a successful decode.
+
+### Test required fields and enum fallbacks
+
+For a required field, test missing keys, explicit `null`, and values of the
+wrong type as separate cases. `DecoderCase.rejectsMissingOrNull` creates the
+first two cases. Pass `nullError:` when the decoder reports explicit null
+with a different exception. For an optional enum, use a known value in the
+baseline and test an unrecognized value and explicit `null` separately. For
+example, a mission source decoder might map an unrecognized source code to
+`SourceType.unknown` and preserve `null` when the API sends no source type.
+Use a matcher that checks the decoded field to verify both outcomes.
 
 The [complete example](example/json_decoder_test_example.dart) includes the
 `User` model, imports, and test entry point. From this checkout, run it with

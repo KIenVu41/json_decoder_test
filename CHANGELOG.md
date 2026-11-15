@@ -1,3 +1,8 @@
+## 0.2.0
+
+- Add `DecoderCase.rejectsMissingOrNull` to register separate cases for a
+  missing field and explicit null, with an optional matcher for the null case.
+
 ## 0.1.1
 
 - Use `test_api` and `matcher` directly so Flutter consumers can use
