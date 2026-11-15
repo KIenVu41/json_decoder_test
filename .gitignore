@@ -7,6 +7,9 @@
 # Library dependency resolution and local overrides
 /pubspec.lock
 /pubspec_overrides.yaml
+/tool/flutter_compatibility/.dart_tool/
+/tool/flutter_compatibility/build/
+/tool/flutter_compatibility/pubspec.lock
 
 # Local SDK cache and editor settings
 /.fvm/

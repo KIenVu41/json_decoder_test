@@ -1,0 +1,12 @@
+name: json_decoder_test_flutter_compatibility
+publish_to: none
+
+environment:
+  sdk: ^3.6.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  floor_generator: ^1.4.2
+  json_decoder_test:
+    path: ../..

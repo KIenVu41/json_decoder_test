@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dart:
+    name: Dart SDK (${{ matrix.sdk }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['3.6.2', '3.13.4']
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+      - run: dart pub get
+      - name: Check formatting
+        if: matrix.sdk == '3.13.4'
+        run: dart format --output=none --set-exit-if-changed lib test example
+      - run: dart analyze lib test example
+      - run: dart test test example/json_decoder_test_example.dart
+
+  flutter-compatibility:
+    name: Flutter dependency regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+      - name: Prepare Flutter test
+        run: |
+          mkdir -p tool/flutter_compatibility/test
+          sed 's|package:test/test.dart|package:flutter_test/flutter_test.dart|' \
+            example/json_decoder_test_example.dart \
+            > tool/flutter_compatibility/test/decoder_test.dart
+      - name: Resolve dependencies
+        working-directory: tool/flutter_compatibility
+        run: flutter pub get
+      - name: Run Flutter test
+        working-directory: tool/flutter_compatibility
+        run: flutter test --no-pub
