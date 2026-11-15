@@ -107,6 +107,26 @@ final class DecoderCase {
       : _expected = error,
         _throws = true;
 
+  /// Creates separate cases for a missing field and an explicit null value.
+  ///
+  /// [path] must identify an existing field in the original fixture.
+  /// Both cases use [error] unless [nullError] supplies a different matcher
+  /// for explicit null.
+  static List<DecoderCase> rejectsMissingOrNull(
+    Iterable<Object> path,
+    Matcher error, {
+    Matcher? nullError,
+  }) {
+    final missing = JsonMutation.remove(path);
+    return [
+      DecoderCase.rejects(missing, error),
+      DecoderCase.rejects(
+        JsonMutation.replace(missing.path, null),
+        nullError ?? error,
+      ),
+    ];
+  }
+
   /// The change to apply before invoking the decoder.
   final JsonMutation mutation;
   final Object? _expected;

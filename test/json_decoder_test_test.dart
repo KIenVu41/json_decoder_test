@@ -3,6 +3,24 @@ import 'package:test/test.dart';
 
 void main() {
   testJsonDecoder(
+    'Required nested field',
+    fixture: {
+      'order': {'id': 42},
+    },
+    decode: (json) {
+      final order = json['order'] as Map<String, dynamic>;
+      if (!order.containsKey('id')) throw const FormatException('Missing id');
+      return order['id'] as int;
+    },
+    baseline: equals(42),
+    cases: DecoderCase.rejectsMissingOrNull(
+      ['order', 'id'],
+      isA<FormatException>(),
+      nullError: isA<TypeError>(),
+    ),
+  );
+
+  testJsonDecoder(
     'Asynchronous decoder',
     fixture: {'value': 1},
     decode: (json) async {
