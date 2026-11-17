@@ -2,6 +2,38 @@ import 'package:json_decoder_test/json_decoder_test.dart';
 import 'package:test/test.dart';
 
 void main() {
+  final known = {'sourceType': 2};
+
+  testJsonDecoderFixtures(
+    'Named fixtures',
+    decode: (json) async {
+      final sourceType = json.remove('sourceType') as int?;
+      return sourceType == null || sourceType == 2 ? sourceType : -1;
+    },
+    fixtures: [
+      DecoderFixture(
+        'known source',
+        json: known,
+        expected: equals(2),
+        cases: [
+          DecoderCase.decodes(JsonMutation.replace(['sourceType'], 999), -1),
+          DecoderCase.decodes(JsonMutation.replace(['sourceType'], null), null),
+        ],
+      ),
+      DecoderFixture(
+        'unrecognized source',
+        json: {'sourceType': 999},
+        expected: equals(-1),
+      ),
+      DecoderFixture(
+        'explicit null',
+        json: {'sourceType': null},
+        expected: isNull,
+      ),
+    ],
+  );
+  known['sourceType'] = 1;
+
   testJsonDecoder(
     'Required nested field',
     fixture: {

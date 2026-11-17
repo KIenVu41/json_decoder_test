@@ -133,6 +133,52 @@ final class DecoderCase {
   final bool _throws;
 }
 
+/// A named JSON input with an optional baseline matcher and mutation cases.
+final class DecoderFixture {
+  /// Creates a fixture whose original JSON must decode successfully.
+  const DecoderFixture(
+    this.name, {
+    required this.json,
+    this.expected,
+    this.cases = const [],
+  });
+
+  /// The name included in the test group.
+  final String name;
+
+  /// The JSON-encodable input, snapshotted when tests are registered.
+  final Map<String, dynamic> json;
+
+  /// The optional matcher for the decoded original JSON.
+  final Matcher? expected;
+
+  /// Additional cases applied independently to copies of this fixture.
+  final Iterable<DecoderCase> cases;
+}
+
+/// Registers a group for each named fixture using the same [decode] function.
+///
+/// Each fixture gets a baseline test and one test per mutation. Test names
+/// include [description] and the fixture name. Call this function from
+/// `main()` or within a test group.
+void testJsonDecoderFixtures<T>(
+  String description, {
+  required FutureOr<T> Function(Map<String, dynamic>) decode,
+  required Iterable<DecoderFixture> fixtures,
+}) {
+  group(description, () {
+    for (final fixture in fixtures) {
+      testJsonDecoder<T>(
+        fixture.name,
+        fixture: fixture.json,
+        decode: decode,
+        cases: fixture.cases,
+        baseline: fixture.expected,
+      );
+    }
+  });
+}
+
 /// Registers a baseline test and one isolated test per case.
 ///
 /// [fixture] must be JSON-encodable. It is snapshotted when tests are

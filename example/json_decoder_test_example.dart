@@ -35,4 +35,25 @@ void main() {
       ),
     ],
   );
+
+  testJsonDecoderFixtures(
+    'User.fromJson across API payloads',
+    decode: User.fromJson,
+    fixtures: [
+      DecoderFixture(
+        'current payload',
+        json: {'id': 42, 'status': 'active'},
+        expected: isA<User>().having(
+          (user) => user.status,
+          'status',
+          Status.active,
+        ),
+      ),
+      DecoderFixture(
+        'unrecognized status',
+        json: {'id': 42, 'status': 'paused'},
+        expected: userWithUnknownStatus,
+      ),
+    ],
+  );
 }
