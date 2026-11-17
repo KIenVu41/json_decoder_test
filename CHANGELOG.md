@@ -1,3 +1,8 @@
+## 0.3.0
+
+- Add `testJsonDecoderFixtures` and `DecoderFixture` to run a decoder against
+  named payloads with individual baseline matchers and mutation cases.
+
 ## 0.2.0
 
 - Add `DecoderCase.rejectsMissingOrNull` to register separate cases for a

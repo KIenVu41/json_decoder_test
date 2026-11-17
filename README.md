@@ -58,6 +58,31 @@ example, a mission source decoder might map an unrecognized source code to
 `SourceType.unknown` and preserve `null` when the API sends no source type.
 Use a matcher that checks the decoded field to verify both outcomes.
 
+### Run the same decoder against named fixtures
+
+```dart
+testJsonDecoderFixtures(
+  'User.fromJson across API payloads',
+  decode: User.fromJson,
+  fixtures: [
+    DecoderFixture(
+      'current payload',
+      json: {'id': 42, 'status': 'active'},
+      expected: isA<User>().having((user) => user.status, 'status', Status.active),
+    ),
+    DecoderFixture(
+      'unrecognized status',
+      json: {'id': 42, 'status': 'paused'},
+      expected: isA<User>().having((user) => user.status, 'status', Status.unknown),
+    ),
+  ],
+);
+```
+
+Each original payload must decode successfully. The optional `expected`
+matcher checks its decoded result, and `cases` adds mutations specific to that
+fixture. Test names include the decoder description and fixture name.
+
 The [complete example](example/json_decoder_test_example.dart) includes the
 `User` model, imports, and test entry point. From this checkout, run it with
 `dart test example/json_decoder_test_example.dart`.
