@@ -40,6 +40,11 @@ void main() {
     'User.fromJson across API payloads',
     decode: User.fromJson,
     fixtures: [
+      DecoderFixture.rejects(
+        'missing required id',
+        json: {'status': 'active'},
+        error: isA<TypeError>(),
+      ),
       DecoderFixture(
         'current payload',
         json: {'id': 42, 'status': 'active'},

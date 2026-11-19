@@ -1,3 +1,8 @@
+## 0.4.0
+
+- Add `DecoderFixture.rejects` for named payloads expected to throw a
+  matching error, including asynchronous decoders.
+
 ## 0.3.0
 
 - Add `testJsonDecoderFixtures` and `DecoderFixture` to run a decoder against
