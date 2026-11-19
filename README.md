@@ -79,9 +79,26 @@ testJsonDecoderFixtures(
 );
 ```
 
-Each original payload must decode successfully. The optional `expected`
+For fixtures created with `DecoderFixture`, the original payload must decode
+successfully. The optional `expected`
 matcher checks its decoded result, and `cases` adds mutations specific to that
 fixture. Test names include the decoder description and fixture name.
+
+Use `DecoderFixture.rejects` for an original payload that must fail:
+
+```dart
+DecoderFixture.rejects(
+  'missing required id',
+  json: {'status': 'active'},
+  error: isA<TypeError>(),
+)
+```
+
+This constructor registers one test and accepts an error matcher. Both
+synchronous exceptions and failed futures are checked. A successful decode
+or an error that does not match makes the test fail. Rejected fixtures have
+no mutation cases. Existing fixtures and mutation APIs keep their behavior
+when upgrading from 0.3.0.
 
 The [complete example](example/json_decoder_test_example.dart) includes the
 `User` model, imports, and test entry point. From this checkout, run it with

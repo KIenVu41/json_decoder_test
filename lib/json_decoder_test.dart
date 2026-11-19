@@ -133,7 +133,7 @@ final class DecoderCase {
   final bool _throws;
 }
 
-/// A named JSON input with an optional baseline matcher and mutation cases.
+/// A named JSON input with an expected decoding outcome.
 final class DecoderFixture {
   /// Creates a fixture whose original JSON must decode successfully.
   const DecoderFixture(
@@ -141,7 +141,19 @@ final class DecoderFixture {
     required this.json,
     this.expected,
     this.cases = const [],
-  });
+  }) : _error = null;
+
+  /// Creates one test expecting [json] to throw or complete with [error].
+  ///
+  /// The JSON is snapshotted when tests are registered. This fixture has no
+  /// mutation cases because its original payload is expected to be rejected.
+  const DecoderFixture.rejects(
+    this.name, {
+    required this.json,
+    required Matcher error,
+  })  : expected = null,
+        cases = const [],
+        _error = error;
 
   /// The name included in the test group.
   final String name;
@@ -154,13 +166,14 @@ final class DecoderFixture {
 
   /// Additional cases applied independently to copies of this fixture.
   final Iterable<DecoderCase> cases;
+  final Matcher? _error;
 }
 
 /// Registers a group for each named fixture using the same [decode] function.
 ///
-/// Each fixture gets a baseline test and one test per mutation. Test names
-/// include [description] and the fixture name. Call this function from
-/// `main()` or within a test group.
+/// Successful fixtures get a baseline test and one test per mutation.
+/// Rejected fixtures get one test checking their error matcher. Test names
+/// include [description] and the fixture name. Call from `main()` or a group.
 void testJsonDecoderFixtures<T>(
   String description, {
   required FutureOr<T> Function(Map<String, dynamic>) decode,
@@ -168,6 +181,17 @@ void testJsonDecoderFixtures<T>(
 }) {
   group(description, () {
     for (final fixture in fixtures) {
+      final error = fixture._error;
+      if (error != null) {
+        final encoded = jsonEncode(fixture.json);
+        group(fixture.name, () {
+          test('rejects the original fixture', () async {
+            final input = jsonDecode(encoded) as Map<String, dynamic>;
+            await expectLater(() => decode(input), throwsA(error));
+          });
+        });
+        continue;
+      }
       testJsonDecoder<T>(
         fixture.name,
         fixture: fixture.json,

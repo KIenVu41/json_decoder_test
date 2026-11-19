@@ -2,6 +2,35 @@ import 'package:json_decoder_test/json_decoder_test.dart';
 import 'package:test/test.dart';
 
 void main() {
+  for (final asynchronous in [false, true]) {
+    final payload = <String, dynamic>{'value': 'invalid'};
+    int decode(Map<String, dynamic> json) {
+      final value = json.remove('value');
+      if (value is! int) throw const FormatException('Expected integer');
+      return value;
+    }
+
+    testJsonDecoderFixtures<int>(
+      'Rejected fixtures (async: $asynchronous)',
+      decode: asynchronous ? (json) async => decode(json) : decode,
+      fixtures: [
+        DecoderFixture.rejects(
+          'invalid value',
+          json: payload,
+          error: isA<FormatException>(),
+        ),
+        DecoderFixture.rejects(
+          'same payload remains isolated',
+          json: payload,
+          error: isA<FormatException>(),
+        ),
+        DecoderFixture('valid value',
+            json: {'value': 42}, expected: equals(42)),
+      ],
+    );
+    payload['value'] = 42;
+  }
+
   final known = {'sourceType': 2};
 
   testJsonDecoderFixtures(
