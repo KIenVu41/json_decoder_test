@@ -39,13 +39,42 @@ testJsonDecoder(
 ```
 
 Pass string keys and zero-based array indices to address nested values, for
-example `['orders', 0, 'status']`. Targets must exist in the original fixture.
+example `['orders', 0, 'status']`. Remove and replace targets must exist in
+the original fixture.
 An invalid target fails the case before the decoder runs. Fixtures and
 replacement values must be JSON-encodable.
 Each case gets its own copy, so mutations and decoder writes do not leak
 between tests. The original fixture also gets a baseline test. The decoder
 can return a value or a future. Supply an exception matcher for a rejection,
 or an expected value or matcher for a successful decode.
+
+### Test newly added server fields
+
+Use `JsonMutation.add` to check how a decoder handles an object key absent from
+the original fixture:
+
+```dart
+DecoderCase.decodes(
+  JsonMutation.add(['server_metadata'], {'revision': 2}),
+  isA<User>().having((user) => user.id, 'id', 42),
+)
+```
+
+For a strict decoder that rejects unknown fields, use
+`DecoderCase.rejects(JsonMutation.add(['extra'], true), yourErrorMatcher)`.
+The library checks the outcome you specify; it does not require decoders to
+ignore extra fields.
+
+Parent containers must already exist. A path such as
+`['orders', 0, 'metadata']` can add a key to an object inside an array. Adding
+an existing key (including one whose value is null), creating missing parents,
+or inserting/appending array elements fails before the decoder is called.
+Use `JsonMutation.replace` to change an existing value.
+
+Added values must be JSON-encodable, including null, and are snapshotted when
+constructing the mutation. Each case receives a fresh copy of the added value
+and fixture, for both synchronous and asynchronous decoders. Test names include
+the operation and path, such as `add $.server_metadata`.
 
 ### Test required fields and enum fallbacks
 

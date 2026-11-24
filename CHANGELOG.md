@@ -1,3 +1,12 @@
+## 0.5.0
+
+- Add `JsonMutation.add` to test missing object keys such as new server fields.
+- Support existing nested objects and objects inside arrays without overwriting
+  fields, creating parents or inserting array elements.
+- Snapshot added values and isolate them between cases, including async decoders.
+- Reject invalid add targets before invoking the decoder.
+- Keep existing mutation APIs, SDK constraints and dependencies unchanged.
+
 ## 0.4.0
 
 - Add `DecoderFixture.rejects` for named payloads expected to throw a
