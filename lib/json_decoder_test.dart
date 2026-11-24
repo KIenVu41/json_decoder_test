@@ -7,12 +7,13 @@ import 'dart:convert';
 import 'package:matcher/expect.dart';
 import 'package:test_api/scaffolding.dart';
 
-/// One change to an existing field or array element in a JSON fixture.
+/// One change to an object field or array element in a JSON fixture.
 ///
 /// Paths use string keys for objects and zero-based integer indices for arrays.
 /// Each case starts with a fresh copy of the original fixture.
-/// The path must be nonempty and point to an existing value. Invalid targets
-/// fail the test before the decoder runs.
+/// Paths must be nonempty. Remove and replace require an existing value; add
+/// requires a missing object key with an existing parent. Invalid targets fail
+/// the test before the decoder runs.
 final class JsonMutation {
   /// Removes an existing object field or array element.
   JsonMutation.remove(Iterable<Object> path)
@@ -24,12 +25,22 @@ final class JsonMutation {
   JsonMutation.replace(Iterable<Object> path, Object? value)
       : this._(path, remove: false, encodedValue: jsonEncode(value));
 
+  /// Adds a missing object key without overwriting an existing value.
+  ///
+  /// Parent objects and arrays in [path] must already exist. The final segment
+  /// must be an object key; inserting array elements is not supported.
+  /// [value] is JSON-encoded immediately and copied independently for each case.
+  JsonMutation.add(Iterable<Object> path, Object? value)
+      : this._(path, remove: false, add: true, encodedValue: jsonEncode(value));
+
   JsonMutation._(
     Iterable<Object> path, {
     required bool remove,
+    bool add = false,
     required String? encodedValue,
   })  : path = List.unmodifiable(path),
         _remove = remove,
+        _add = add,
         _encodedValue = encodedValue {
     if (this.path.isEmpty ||
         this.path.any(
@@ -43,6 +54,7 @@ final class JsonMutation {
   /// The immutable sequence of keys and indices leading to the target.
   final List<Object> path;
   final bool _remove;
+  final bool _add;
   final String? _encodedValue;
 
   String get _location {
@@ -58,8 +70,9 @@ final class JsonMutation {
     return result.toString();
   }
 
-  String get _description =>
-      _remove ? 'remove $_location' : 'set $_location to $_encodedValue';
+  String get _description => _remove
+      ? 'remove $_location'
+      : '${_add ? 'add' : 'set'} $_location to $_encodedValue';
 
   void _apply(Map<String, dynamic> fixture) {
     Object? parent = fixture;
@@ -75,13 +88,17 @@ final class JsonMutation {
     final segment = path.last;
     switch (parent) {
       case Map<String, dynamic> object
-          when segment is String && object.containsKey(segment):
+          when _add && segment is String && !object.containsKey(segment):
+        object[segment] = jsonDecode(_encodedValue!);
+      case Map<String, dynamic> object
+          when !_add && segment is String && object.containsKey(segment):
         if (_remove) {
           object.remove(segment);
         } else {
           object[segment] = jsonDecode(_encodedValue!);
         }
-      case List<dynamic> array when segment is int && segment < array.length:
+      case List<dynamic> array
+          when !_add && segment is int && segment < array.length:
         if (_remove) {
           array.removeAt(segment);
         } else {

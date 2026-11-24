@@ -27,6 +27,10 @@ void main() {
     fixture: {'id': 42, 'status': 'active'},
     decode: User.fromJson,
     cases: [
+      DecoderCase.decodes(
+        JsonMutation.add(['server_metadata'], {'revision': 2}),
+        isA<User>().having((user) => user.id, 'id', 42),
+      ),
       ...DecoderCase.rejectsMissingOrNull(['id'], isA<TypeError>()),
       DecoderCase.rejects(JsonMutation.replace(['id'], '42'), isA<TypeError>()),
       DecoderCase.decodes(
