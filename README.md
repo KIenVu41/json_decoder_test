@@ -39,8 +39,9 @@ testJsonDecoder(
 ```
 
 Pass string keys and zero-based array indices to address nested values, for
-example `['orders', 0, 'status']`. Remove and replace targets must exist in
-the original fixture.
+example `['orders', 0, 'status']`. For a single mutation, remove and replace
+targets must exist in the original fixture. In a sequence, targets are checked
+after the preceding steps.
 An invalid target fails the case before the decoder runs. Fixtures and
 replacement values must be JSON-encodable.
 Each case gets its own copy, so mutations and decoder writes do not leak
@@ -75,6 +76,45 @@ Added values must be JSON-encodable, including null, and are snapshotted when
 constructing the mutation. Each case receives a fresh copy of the added value
 and fixture, for both synchronous and asynchronous decoders. Test names include
 the operation and path, such as `add $.server_metadata`.
+
+### Apply several changes in one case
+
+Use `JsonMutation.sequence` when a scenario changes multiple fields, such as
+switching a customer type and supplying the fields required by that type.
+The existing `DecoderCase.decodes` and `DecoderCase.rejects` constructors both
+accept a sequence. For the `User` model in the runnable example:
+
+```dart
+DecoderCase.decodes(
+  JsonMutation.sequence([
+    JsonMutation.replace(['id'], 7),
+    JsonMutation.replace(['status'], 'paused'),
+  ]),
+  isA<User>()
+      .having((user) => user.id, 'id', 7)
+      .having((user) => user.status, 'status', Status.unknown),
+)
+```
+
+Steps run from top to bottom on one fresh copy of the original fixture. The
+decoder runs once after all steps succeed. A step can use a parent added by a
+preceding step. Array indices refer to the current array: after removing index
+`0`, replacing index `0` changes the element that moved into the first position.
+
+A sequence must not be empty. Its input iterable is copied at construction;
+mutation paths and added/replacement values retain their existing snapshots.
+Nested sequences contribute their steps in order. Each test gets independent
+fixture and value copies, including for asynchronous decoders.
+
+An invalid step fails the case before the decoder runs, even if the expected
+error matcher would accept `StateError`. The error includes its one-based step
+number in the expanded sequence and the invalid JSON path. Earlier changes are
+discarded with that test's fixture copy; other cases and the original input are
+unaffected. Test names list the operations in execution order.
+
+`JsonMutation.sequence(...).path` is an immutable empty list representing the
+fixture root, rather than any individual step's target. The `remove`, `replace`
+and `add` constructors still reject empty paths and keep their behavior.
 
 ### Test required fields and enum fallbacks
 

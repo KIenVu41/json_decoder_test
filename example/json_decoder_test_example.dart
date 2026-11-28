@@ -28,6 +28,22 @@ void main() {
     decode: User.fromJson,
     cases: [
       DecoderCase.decodes(
+        JsonMutation.sequence([
+          JsonMutation.replace(['id'], 7),
+          JsonMutation.replace(['status'], 'paused'),
+        ]),
+        isA<User>()
+            .having((user) => user.id, 'id', 7)
+            .having((user) => user.status, 'status', Status.unknown),
+      ),
+      DecoderCase.rejects(
+        JsonMutation.sequence([
+          JsonMutation.add(['server_metadata'], {'revision': 2}),
+          JsonMutation.replace(['id'], 'invalid'),
+        ]),
+        isA<TypeError>(),
+      ),
+      DecoderCase.decodes(
         JsonMutation.add(['server_metadata'], {'revision': 2}),
         isA<User>().having((user) => user.id, 'id', 42),
       ),

@@ -7,13 +7,14 @@ import 'dart:convert';
 import 'package:matcher/expect.dart';
 import 'package:test_api/scaffolding.dart';
 
-/// One change to an object field or array element in a JSON fixture.
+/// A change, or ordered sequence of changes, to a JSON fixture.
 ///
 /// Paths use string keys for objects and zero-based integer indices for arrays.
 /// Each case starts with a fresh copy of the original fixture.
-/// Paths must be nonempty. Remove and replace require an existing value; add
-/// requires a missing object key with an existing parent. Invalid targets fail
-/// the test before the decoder runs.
+/// Remove, replace and add paths must be nonempty. Their targets are checked
+/// against the current fixture when each operation runs. Remove and replace
+/// require an existing value; add requires a missing key with an existing parent.
+/// Invalid targets fail the test before the decoder runs.
 final class JsonMutation {
   /// Removes an existing object field or array element.
   JsonMutation.remove(Iterable<Object> path)
@@ -33,6 +34,24 @@ final class JsonMutation {
   JsonMutation.add(Iterable<Object> path, Object? value)
       : this._(path, remove: false, add: true, encodedValue: jsonEncode(value));
 
+  /// Applies a nonempty snapshot of [mutations] in order to one fixture copy.
+  ///
+  /// Each step sees the result of preceding steps. Nested sequences contribute
+  /// their steps in order. An invalid target fails before the decoder runs,
+  /// with a one-based step number. [path] is empty to represent the fixture root.
+  JsonMutation.sequence(Iterable<JsonMutation> mutations)
+      : path = const [],
+        _remove = false,
+        _add = false,
+        _encodedValue = null,
+        _sequence = List.unmodifiable(
+          mutations.expand((mutation) => mutation._sequence ?? [mutation]),
+        ) {
+    if (_sequence!.isEmpty) {
+      throw ArgumentError('A mutation sequence must not be empty.');
+    }
+  }
+
   JsonMutation._(
     Iterable<Object> path, {
     required bool remove,
@@ -41,7 +60,8 @@ final class JsonMutation {
   })  : path = List.unmodifiable(path),
         _remove = remove,
         _add = add,
-        _encodedValue = encodedValue {
+        _encodedValue = encodedValue,
+        _sequence = null {
     if (this.path.isEmpty ||
         this.path.any(
               (segment) =>
@@ -51,11 +71,14 @@ final class JsonMutation {
     }
   }
 
-  /// The immutable sequence of keys and indices leading to the target.
+  /// The immutable keys and indices leading to a single-operation target.
+  ///
+  /// Empty for [JsonMutation.sequence], which applies at the fixture root.
   final List<Object> path;
   final bool _remove;
   final bool _add;
   final String? _encodedValue;
+  final List<JsonMutation>? _sequence;
 
   String get _location {
     final result = StringBuffer(r'$');
@@ -70,11 +93,30 @@ final class JsonMutation {
     return result.toString();
   }
 
-  String get _description => _remove
-      ? 'remove $_location'
-      : '${_add ? 'add' : 'set'} $_location to $_encodedValue';
+  String get _description {
+    final steps = _sequence;
+    if (steps != null) {
+      return 'sequence (${steps.map((step) => step._description).join('; ')})';
+    }
+    return _remove
+        ? 'remove $_location'
+        : '${_add ? 'add' : 'set'} $_location to $_encodedValue';
+  }
 
   void _apply(Map<String, dynamic> fixture) {
+    final steps = _sequence;
+    if (steps != null) {
+      for (var index = 0; index < steps.length; index++) {
+        try {
+          steps[index]._apply(fixture);
+        } on StateError catch (error) {
+          throw StateError(
+            'Invalid JSON mutation sequence at step ${index + 1}: ${error.message}',
+          );
+        }
+      }
+      return;
+    }
     Object? parent = fixture;
     for (final segment in path.take(path.length - 1)) {
       parent = switch (parent) {
