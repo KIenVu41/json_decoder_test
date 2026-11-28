@@ -1,3 +1,13 @@
+## 0.6.0
+
+- Add `JsonMutation.sequence` for multiple ordered changes in one decoder case.
+- Snapshot the input sequence and apply all steps to one isolated fixture copy.
+- Resolve paths and array indices against the result of preceding steps.
+- Report the failing step and path before calling the decoder.
+- Represent sequence paths as the fixture root while keeping single-operation
+  paths, existing constructors, SDK constraints and dependencies unchanged.
+- Add sequence success, rejection, ordering and isolation examples and tests.
+
 ## 0.5.0
 
 - Add `JsonMutation.add` to test missing object keys such as new server fields.
